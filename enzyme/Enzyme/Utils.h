@@ -2940,6 +2940,14 @@ llvm::SmallVector<llvm::Value *, 1> getJuliaObjects(llvm::Value *v,
 llvm::SmallVector<std::tuple<llvm::Instruction *, llvm::Value *, size_t>, 1>
 findAllUsersOf(llvm::Value *AI);
 
+// Give a distinct cloned function a new GUID if cloning copied one.
+static inline void reassignClonedFunctionGUID(llvm::Function &F) {
+#if LLVM_VERSION_MAJOR >= 23
+  if (F.getGUIDIfAssigned())
+    F.reassignGUID();
+#endif
+}
+
 static bool hasTerminator(llvm::BasicBlock *BB) {
 #if LLVM_VERSION_MAJOR >= 23
   return BB->hasTerminator();

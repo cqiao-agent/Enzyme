@@ -3668,6 +3668,7 @@ Function *PreProcessCache::CloneFunctionWithReturns(
   if (!F->empty()) {
     CloneFunctionInto(NewF, F, VMap, CloneFunctionChangeType::LocalChangesOnly,
                       Returns, "", nullptr);
+    reassignClonedFunctionGUID(*NewF);
   }
   if (NewF->empty()) {
     auto entry = BasicBlock::Create(NewF->getContext(), "entry", NewF);
