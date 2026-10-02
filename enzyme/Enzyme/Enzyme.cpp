@@ -27,10 +27,14 @@
 #include <memory>
 
 #if LLVM_VERSION_MAJOR >= 16
+#ifndef _MSC_VER
 #define private public
+#endif
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Transforms/Utils/ScalarEvolutionExpander.h"
+#ifndef _MSC_VER
 #undef private
+#endif
 #else
 #include "SCEV/ScalarEvolution.h"
 #include "SCEV/ScalarEvolutionExpander.h"
@@ -3102,8 +3106,10 @@ static InlineParams getInlineParamsFromOptLevel(OptimizationLevel Level) {
 #include "llvm/Transforms/Scalar/LowerConstantIntrinsics.h"
 #include "llvm/Transforms/Scalar/LowerMatrixIntrinsics.h"
 namespace llvm {
+#ifndef ENZYME_WINDOWS_LLVM_DATA_IMPORTS
 extern cl::opt<unsigned> SetLicmMssaNoAccForPromotionCap;
 extern cl::opt<unsigned> SetLicmMssaOptCap;
+#endif
 #define EnableLoopFlatten false
 #define EagerlyInvalidateAnalyses false
 #define RunNewGVN false

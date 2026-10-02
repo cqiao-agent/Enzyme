@@ -33,6 +33,16 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# MSVC mangles member access into symbol names. Keep LLVM's access specifiers
+# intact and permit Enzyme's internal LLVM access with Clang's compiler flag.
+if(WIN32 AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+  if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/clang:-fno-access-control>)
+  else()
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-access-control>)
+  endif()
+endif()
+
 option(ENZYME_ENABLE_PLUGINS "Enable Clang/LLD/Opt plugins" ON)
 option(ENZYME_ENABLE_BENCHMARKS "Enable benchmarks" OFF)
 option(ENZYME_BC_LOADER "Enable bitcode loader" ON)
@@ -251,6 +261,10 @@ message("found MLIR ${MLIR_FOUND}")
 # include(AddClang)
 
 add_definitions(${LLVM_DEFINITIONS})
+if(WIN32 AND ENZYME_WINDOWS_LLVM_INCLUDE_DIR)
+  list(PREPEND LLVM_INCLUDE_DIRS "${ENZYME_WINDOWS_LLVM_INCLUDE_DIR}")
+  add_definitions(-DENZYME_WINDOWS_LLVM_DATA_IMPORTS)
+endif()
 include_directories(${LLVM_INCLUDE_DIRS})
 message("LLVM_INSTALL_PREFIX: ${LLVM_INSTALL_PREFIX}")
 message("LLVM_INCLUDE_DIRS: ${LLVM_INCLUDE_DIRS}")
@@ -286,13 +300,17 @@ list(GET LLVM_INCLUDE_DIRS 0 LLVM_IDIR)
 message("first llvm include directory" ${LLVM_IDIR})
 
 file(READ ${LLVM_IDIR}/llvm/Analysis/ScalarEvolution.h INPUT_TEXT)
-string(REPLACE private public INPUT_TEXT "${INPUT_TEXT}")
+if(NOT (WIN32 AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
+  string(REPLACE private public INPUT_TEXT "${INPUT_TEXT}")
+endif()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/include/SCEV/ScalarEvolution.h"
      "${INPUT_TEXT}")
 
 file(READ ${LLVM_IDIR}/llvm/Analysis/TargetLibraryInfo.h INPUT_TEXT)
-string(REPLACE "class TargetLibraryInfo {" "class TargetLibraryInfo {public:"
-       INPUT_TEXT "${INPUT_TEXT}")
+if(NOT (WIN32 AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
+  string(REPLACE "class TargetLibraryInfo {" "class TargetLibraryInfo {public:"
+         INPUT_TEXT "${INPUT_TEXT}")
+endif()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/include/SCEV/TargetLibraryInfo.h"
      "${INPUT_TEXT}")
 
@@ -367,12 +385,14 @@ if(ENZYME_ENABLE_PLUGINS)
     set(bundled_includes
         "${CMAKE_CURRENT_BINARY_DIR}/Enzyme/Clang/bundled_includes.h")
     list(APPEND ENZYME_INCLUDES
-         ${CMAKE_CURRENT_SOURCE_DIR}/scripts/bundle-includes.sh)
+         ${CMAKE_CURRENT_SOURCE_DIR}/scripts/bundle-includes.cmake)
     add_custom_command(
       OUTPUT ${bundled_includes}
       COMMAND
-        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/bundle-includes.sh
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/enzyme/enzyme ${bundled_includes}
+        ${CMAKE_COMMAND}
+        "-DINPUT_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "-DOUTPUT_FILE=${bundled_includes}"
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/scripts/bundle-includes.cmake
       DEPENDS ${ENZYME_INCLUDES}
       COMMENT "Bundling includes"
       VERBATIM)

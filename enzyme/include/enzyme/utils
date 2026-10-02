@@ -1,5 +1,6 @@
 #pragma once
 
+extern "C" {
 extern int enzyme_interleave;
 
 extern int enzyme_dup;
@@ -13,6 +14,7 @@ extern int enzyme_dup_return;
 
 extern int enzyme_primal_return;
 extern int enzyme_noret;
+} // extern "C": Enzyme identifies these marker globals by their IR names.
 
 template<typename Return, typename... T>
 Return __enzyme_autodiff(T...);

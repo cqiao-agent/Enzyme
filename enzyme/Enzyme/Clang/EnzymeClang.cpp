@@ -231,6 +231,10 @@ public:
         new llvm::vfs::OverlayFileSystem(baseFS));
     IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> fs(
         new llvm::vfs::InMemoryFileSystem());
+    // Normalize drive-relative paths before adding files on Windows. The
+    // overlay otherwise changes the working directory only after insertion.
+    if (auto cwd = baseFS->getCurrentWorkingDirectory())
+      fs->setCurrentWorkingDirectory(*cwd);
 
     struct tm y2k = {};
 

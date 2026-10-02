@@ -15,3 +15,12 @@
 /polly export-ignore
 /tests export-ignore
 /enzyme/benchmarks export-ignore
+
+# Keep native Windows plugin sources and build inputs stable across checkouts.
+/.gitattributes text eol=lf
+/enzyme/CMakeLists.txt text eol=lf
+/enzyme/Enzyme/*.cpp text eol=lf
+/enzyme/Enzyme/*.h text eol=lf
+/enzyme/Enzyme/Clang/*.cpp text eol=lf
+/enzyme/include/enzyme/* text eol=lf
+/enzyme/scripts/*.cmake text eol=lf

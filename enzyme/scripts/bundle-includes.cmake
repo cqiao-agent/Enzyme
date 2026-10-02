@@ -1,0 +1,26 @@
+# Bundle virtual Enzyme headers without a POSIX shell (also usable on Windows).
+if(NOT DEFINED INPUT_ROOT OR NOT DEFINED OUTPUT_FILE)
+  message(FATAL_ERROR "INPUT_ROOT and OUTPUT_FILE are required")
+endif()
+file(GLOB_RECURSE headers LIST_DIRECTORIES false RELATIVE "${INPUT_ROOT}"
+     "${INPUT_ROOT}/*")
+list(SORT headers)
+set(bundled "const char* include_headers[][2] = {\n")
+foreach(header IN LISTS headers)
+  file(READ "${INPUT_ROOT}/${header}" contents)
+  string(FIND "${contents}" ")ENZYME_HDR\"" delimiter_position)
+  if(NOT delimiter_position EQUAL -1)
+    message(FATAL_ERROR "Raw string delimiter occurs in ${header}")
+  endif()
+  string(APPEND bundled "{\"/enzymeroot/${header}\", R\"ENZYME_HDR(${contents})ENZYME_HDR\"},\n")
+endforeach()
+string(APPEND bundled "};\n")
+get_filename_component(output_directory "${OUTPUT_FILE}" DIRECTORY)
+file(MAKE_DIRECTORY "${output_directory}")
+file(WRITE "${OUTPUT_FILE}.tmp" "${bundled}")
+execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${OUTPUT_FILE}.tmp" "${OUTPUT_FILE}"
+                RESULT_VARIABLE copy_result)
+if(NOT copy_result STREQUAL "0")
+  message(FATAL_ERROR "Copying bundled headers failed: ${copy_result}")
+endif()

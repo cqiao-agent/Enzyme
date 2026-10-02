@@ -31,10 +31,14 @@
 #include <deque>
 
 #include <llvm/Config/llvm-config.h>
+#ifndef _MSC_VER
 #define private public
+#endif
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Transforms/Utils/ScalarEvolutionExpander.h"
+#ifndef _MSC_VER
 #undef private
+#endif
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/IR/Constants.h"
